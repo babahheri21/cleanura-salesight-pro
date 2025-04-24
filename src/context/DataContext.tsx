@@ -29,7 +29,7 @@ interface DataContextType {
   
   // Customers
   customers: Customer[];
-  addCustomer: (customer: Omit<Customer, "id" | "createdAt" | "lastPurchase">) => void;
+  addCustomer: (customer: Omit<Customer, "id" | "createdAt" | "lastPurchase">) => Customer;
   updateCustomer: (customer: Customer) => void;
   deleteCustomer: (id: string) => void;
   
@@ -132,6 +132,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     
     setCustomers([...customers, newCustomer]);
     toast.success("Customer added successfully");
+    
+    return newCustomer; // Return the newly created customer
   };
   
   const updateCustomer = (customer: Customer) => {

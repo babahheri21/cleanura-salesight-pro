@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "../components/Layout/MainLayout";
 import { useData } from "../context/DataContext";
@@ -196,19 +195,17 @@ const Sales = () => {
   const handleNewCustomerSubmit = () => {
     if (newCustomerData.name && newCustomerData.phone) {
       const newCustomer = addCustomer(newCustomerData);
-      if (newCustomer) {
-        setFormData(prev => ({
-          ...prev,
-          customerId: newCustomer.id
-        }));
-        setCurrentTab("existing");
-        setNewCustomerData({
-          name: "",
-          phone: "",
-          email: "",
-          address: "",
-        });
-      }
+      setFormData(prev => ({
+        ...prev,
+        customerId: newCustomer.id
+      }));
+      setCurrentTab("existing");
+      setNewCustomerData({
+        name: "",
+        phone: "",
+        email: "",
+        address: "",
+      });
     }
   };
 
