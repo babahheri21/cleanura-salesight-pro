@@ -30,7 +30,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { format } from "date-fns";
 import { MessageSquare, Edit, Trash2, Plus, Search } from "lucide-react";
-import { Sale } from "../types";
+import { Sale, Customer, Product } from "../types";
 
 const Sales = () => {
   const { sales, customers, products, addSale, updateSale, deleteSale, markFollowedUp } = useData();
@@ -50,7 +50,7 @@ const Sales = () => {
   const filteredSales = sales.filter(
     (sale) =>
       sale.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sale.product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      (sale.product?.name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,45 +93,78 @@ const Sales = () => {
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addSale({
-      customerId: formData.customerId,
-      productId: formData.productId,
-      quantity: formData.quantity,
-      totalPrice: formData.totalPrice,
-      notes: formData.notes,
-    });
-    setFormData({
-      customerId: "",
-      productId: "",
-      quantity: 1,
-      totalPrice: 0,
-      notes: "",
-    });
-    setIsAddDialogOpen(false);
+    const selectedCustomer = customers.find(c => c.id === formData.customerId);
+    const selectedProduct = products.find(p => p.id === formData.productId);
+    
+    if (selectedCustomer && selectedProduct) {
+      addSale({
+        customer: selectedCustomer,
+        items: [{
+          id: `item-${Date.now()}`,
+          productId: selectedProduct.id,
+          productName: selectedProduct.name,
+          quantity: formData.quantity,
+          sellPrice: selectedProduct.sellPrice,
+          costPrice: selectedProduct.costPrice,
+          discount: 0,
+          total: formData.totalPrice
+        }],
+        totalAmount: formData.totalPrice,
+        profit: formData.totalPrice - (selectedProduct.costPrice * formData.quantity),
+        paymentMethod: "cash",
+        status: "completed",
+        notes: formData.notes,
+        followedUp: false
+      });
+      
+      setFormData({
+        customerId: "",
+        productId: "",
+        quantity: 1,
+        totalPrice: 0,
+        notes: "",
+      });
+      setIsAddDialogOpen(false);
+    }
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedSale) {
-      updateSale({
-        ...selectedSale,
-        customerId: formData.customerId,
-        productId: formData.productId,
-        quantity: formData.quantity,
-        totalPrice: formData.totalPrice,
-        notes: formData.notes,
-      });
-      setIsEditDialogOpen(false);
+      const selectedCustomer = customers.find(c => c.id === formData.customerId);
+      const selectedProduct = products.find(p => p.id === formData.productId);
+      
+      if (selectedCustomer && selectedProduct) {
+        updateSale({
+          ...selectedSale,
+          customer: selectedCustomer,
+          items: [{
+            id: selectedSale.items[0]?.id || `item-${Date.now()}`,
+            productId: selectedProduct.id,
+            productName: selectedProduct.name,
+            quantity: formData.quantity,
+            sellPrice: selectedProduct.sellPrice,
+            costPrice: selectedProduct.costPrice,
+            discount: 0,
+            total: formData.totalPrice
+          }],
+          totalAmount: formData.totalPrice,
+          profit: formData.totalPrice - (selectedProduct.costPrice * formData.quantity),
+          notes: formData.notes,
+        });
+        setIsEditDialogOpen(false);
+      }
     }
   };
 
   const handleEditClick = (sale: Sale) => {
     setSelectedSale(sale);
+    const productId = sale.items[0]?.productId || "";
     setFormData({
       customerId: sale.customer.id,
-      productId: sale.product.id,
-      quantity: sale.quantity,
-      totalPrice: sale.totalPrice,
+      productId: productId,
+      quantity: sale.items[0]?.quantity || 1,
+      totalPrice: sale.totalAmount,
       notes: sale.notes || "",
     });
     setIsEditDialogOpen(true);
@@ -147,6 +180,11 @@ const Sales = () => {
       deleteSale(selectedSale.id);
       setIsDeleteDialogOpen(false);
     }
+  };
+
+  // Helper function to get sale date
+  const getSaleDate = (sale: Sale) => {
+    return sale.date || sale.createdAt;
   };
 
   return (
@@ -213,7 +251,7 @@ const Sales = () => {
               filteredSales.map((sale) => (
                 <TableRow key={sale.id}>
                   <TableCell>
-                    {format(new Date(sale.date), "dd MMM yyyy")}
+                    {format(new Date(getSaleDate(sale)), "dd MMM yyyy")}
                   </TableCell>
                   <TableCell className="flex items-center space-x-2">
                     <span>{sale.customer.name}</span>
@@ -233,16 +271,16 @@ const Sales = () => {
                       </Button>
                     )}
                   </TableCell>
-                  <TableCell>{sale.product.name}</TableCell>
+                  <TableCell>{sale.items[0]?.productName || "N/A"}</TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {sale.quantity}
+                    {sale.items[0]?.quantity || 0}
                   </TableCell>
                   <TableCell>
                     {new Intl.NumberFormat("id-ID", {
                       style: "currency",
                       currency: "IDR",
                       minimumFractionDigits: 0,
-                    }).format(sale.totalPrice)}
+                    }).format(sale.totalAmount)}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <span
@@ -514,15 +552,15 @@ const Sales = () => {
           {selectedSale && (
             <div className="py-3">
               <p className="font-medium">
-                {selectedSale.customer.name} - {selectedSale.product.name}
+                {selectedSale.customer.name} - {selectedSale.items[0]?.productName || "N/A"}
               </p>
               <p className="text-sm text-gray-500">
-                {format(new Date(selectedSale.date), "dd MMM yyyy")} - 
+                {format(new Date(getSaleDate(selectedSale)), "dd MMM yyyy")} - 
                 {new Intl.NumberFormat("id-ID", {
                   style: "currency",
                   currency: "IDR",
                   minimumFractionDigits: 0,
-                }).format(selectedSale.totalPrice)}
+                }).format(selectedSale.totalAmount)}
               </p>
             </div>
           )}

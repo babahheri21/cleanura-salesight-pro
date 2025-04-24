@@ -5,6 +5,7 @@ export interface User {
   email: string;
   role: "admin" | "user" | "guest";
   avatar?: string;
+  username?: string; // Added to fix Settings.tsx error
 }
 
 export interface Product {
@@ -51,6 +52,11 @@ export interface Sale {
   notes?: string;
   createdAt: Date;
   followedUp: boolean;
+  // Adding properties that our components are trying to access
+  date?: Date; // For compatibility
+  totalPrice?: number; // For compatibility
+  product?: Product; // For compatibility
+  quantity?: number; // For compatibility
 }
 
 export interface Expense {
@@ -60,6 +66,7 @@ export interface Expense {
   category: string;
   date: Date;
   receipt?: string;
+  notes?: string; // Added to fix Expenses.tsx errors
 }
 
 export interface FinancialSummary {

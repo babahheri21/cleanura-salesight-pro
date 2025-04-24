@@ -22,29 +22,32 @@ const Reports = () => {
   const startOfLastMonth = startOfMonth(subMonths(currentDate, 1));
   const endOfLastMonth = endOfMonth(subMonths(currentDate, 1));
   
+  // Helper function to get date from sale
+  const getSaleDate = (sale: any) => sale.date || sale.createdAt;
+  
   // Filter sales data for current and last month
   const currentMonthSales = sales.filter(
     (sale) => {
-      const saleDate = new Date(sale.date);
+      const saleDate = new Date(getSaleDate(sale));
       return saleDate >= startOfCurrentMonth && saleDate <= endOfCurrentMonth;
     }
   );
   
   const lastMonthSales = sales.filter(
     (sale) => {
-      const saleDate = new Date(sale.date);
+      const saleDate = new Date(getSaleDate(sale));
       return saleDate >= startOfLastMonth && saleDate <= endOfLastMonth;
     }
   );
   
   // Calculate total sales for current and last month
   const currentMonthTotalSales = currentMonthSales.reduce(
-    (total, sale) => total + sale.totalPrice,
+    (total, sale) => total + (sale.totalPrice || sale.totalAmount || 0),
     0
   );
   
   const lastMonthTotalSales = lastMonthSales.reduce(
-    (total, sale) => total + sale.totalPrice,
+    (total, sale) => total + (sale.totalPrice || sale.totalAmount || 0),
     0
   );
   
@@ -80,9 +83,42 @@ const Reports = () => {
   
   // Prepare data for sales by product chart
   const productSalesData = products.map((product) => {
-    const productSales = sales.filter((sale) => sale.product.id === product.id);
-    const totalSales = productSales.reduce((total, sale) => total + sale.totalPrice, 0);
-    const totalQuantity = productSales.reduce((total, sale) => total + sale.quantity, 0);
+    const productSales = sales.filter((sale) => {
+      if (sale.items && sale.items.length > 0) {
+        return sale.items.some(item => item.productId === product.id);
+      } else if (sale.product) {
+        return sale.product.id === product.id;
+      }
+      return false;
+    });
+    
+    const totalSales = productSales.reduce((total, sale) => {
+      if (sale.items && sale.items.length > 0) {
+        return total + sale.items.reduce((itemTotal, item) => {
+          if (item.productId === product.id) {
+            return itemTotal + item.total;
+          }
+          return itemTotal;
+        }, 0);
+      } else if (sale.product && sale.product.id === product.id) {
+        return total + (sale.totalPrice || sale.totalAmount || 0);
+      }
+      return total;
+    }, 0);
+    
+    const totalQuantity = productSales.reduce((total, sale) => {
+      if (sale.items && sale.items.length > 0) {
+        return total + sale.items.reduce((itemTotal, item) => {
+          if (item.productId === product.id) {
+            return itemTotal + item.quantity;
+          }
+          return itemTotal;
+        }, 0);
+      } else if (sale.product && sale.product.id === product.id) {
+        return total + (sale.quantity || 1);
+      }
+      return total;
+    }, 0);
     
     return {
       name: product.name,
@@ -162,21 +198,23 @@ const Reports = () => {
               }).format(currentMonthTotalSales)}
             </div>
             <p className="text-sm text-gray-500 mt-1">
-              {currentMonthTotalSales > lastMonthTotalSales ? (
-                <span className="text-green-600">
-                  +
-                  {Math.round(
-                    ((currentMonthTotalSales - lastMonthTotalSales) / lastMonthTotalSales) * 100
-                  )}
-                  % vs last month
-                </span>
-              ) : (
-                <span className="text-red-600">
-                  {Math.round(
-                    ((currentMonthTotalSales - lastMonthTotalSales) / lastMonthTotalSales) * 100
-                  )}
-                  % vs last month
-                </span>
+              {lastMonthTotalSales > 0 && (
+                currentMonthTotalSales > lastMonthTotalSales ? (
+                  <span className="text-green-600">
+                    +
+                    {Math.round(
+                      ((currentMonthTotalSales - lastMonthTotalSales) / lastMonthTotalSales) * 100
+                    )}
+                    % vs last month
+                  </span>
+                ) : (
+                  <span className="text-red-600">
+                    {Math.round(
+                      ((currentMonthTotalSales - lastMonthTotalSales) / lastMonthTotalSales) * 100
+                    )}
+                    % vs last month
+                  </span>
+                )
               )}
             </p>
           </CardContent>
@@ -195,22 +233,24 @@ const Reports = () => {
               }).format(currentMonthTotalExpenses)}
             </div>
             <p className="text-sm text-gray-500 mt-1">
-              {currentMonthTotalExpenses < lastMonthTotalExpenses ? (
-                <span className="text-green-600">
-                  -
-                  {Math.round(
-                    ((lastMonthTotalExpenses - currentMonthTotalExpenses) / lastMonthTotalExpenses) * 100
-                  )}
-                  % vs last month
-                </span>
-              ) : (
-                <span className="text-red-600">
-                  +
-                  {Math.round(
-                    ((currentMonthTotalExpenses - lastMonthTotalExpenses) / lastMonthTotalExpenses) * 100
-                  )}
-                  % vs last month
-                </span>
+              {lastMonthTotalExpenses > 0 && (
+                currentMonthTotalExpenses < lastMonthTotalExpenses ? (
+                  <span className="text-green-600">
+                    -
+                    {Math.round(
+                      ((lastMonthTotalExpenses - currentMonthTotalExpenses) / lastMonthTotalExpenses) * 100
+                    )}
+                    % vs last month
+                  </span>
+                ) : (
+                  <span className="text-red-600">
+                    +
+                    {Math.round(
+                      ((currentMonthTotalExpenses - lastMonthTotalExpenses) / lastMonthTotalExpenses) * 100
+                    )}
+                    % vs last month
+                  </span>
+                )
               )}
             </p>
           </CardContent>
@@ -229,21 +269,23 @@ const Reports = () => {
               }).format(currentMonthProfit)}
             </div>
             <p className="text-sm text-gray-500 mt-1">
-              {currentMonthProfit > lastMonthProfit ? (
-                <span className="text-green-600">
-                  +
-                  {Math.round(
-                    ((currentMonthProfit - lastMonthProfit) / Math.abs(lastMonthProfit)) * 100
-                  )}
-                  % vs last month
-                </span>
-              ) : (
-                <span className="text-red-600">
-                  {Math.round(
-                    ((currentMonthProfit - lastMonthProfit) / Math.abs(lastMonthProfit)) * 100
-                  )}
-                  % vs last month
-                </span>
+              {lastMonthProfit !== 0 && (
+                currentMonthProfit > lastMonthProfit ? (
+                  <span className="text-green-600">
+                    +
+                    {Math.round(
+                      ((currentMonthProfit - lastMonthProfit) / Math.abs(lastMonthProfit)) * 100
+                    )}
+                    % vs last month
+                  </span>
+                ) : (
+                  <span className="text-red-600">
+                    {Math.round(
+                      ((currentMonthProfit - lastMonthProfit) / Math.abs(lastMonthProfit)) * 100
+                    )}
+                    % vs last month
+                  </span>
+                )
               )}
             </p>
           </CardContent>

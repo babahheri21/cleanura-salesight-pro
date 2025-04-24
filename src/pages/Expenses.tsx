@@ -56,7 +56,12 @@ const Expenses = () => {
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addExpense(formData);
+    addExpense({
+      description: formData.description,
+      amount: formData.amount,
+      category: formData.category,
+      notes: formData.notes,
+    });
     setFormData({
       description: "",
       amount: 0,
@@ -71,7 +76,10 @@ const Expenses = () => {
     if (selectedExpense) {
       updateExpense({
         ...selectedExpense,
-        ...formData,
+        description: formData.description,
+        amount: formData.amount,
+        category: formData.category,
+        notes: formData.notes,
       });
       setIsEditDialogOpen(false);
     }

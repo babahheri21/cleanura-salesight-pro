@@ -56,10 +56,13 @@ const ProfitLoss = () => {
   const startDate = startOfMonth(setYear(setMonth(new Date(), selectedMonth), selectedYear));
   const endDate = endOfMonth(setYear(setMonth(new Date(), selectedMonth), selectedYear));
   
+  // Get date from sale, accounting for both date and createdAt properties
+  const getSaleDate = (sale: any) => sale.date || sale.createdAt;
+  
   // Filter sales and expenses for the selected period
   const filteredSales = sales.filter(
     (sale) => {
-      const saleDate = new Date(sale.date);
+      const saleDate = new Date(getSaleDate(sale));
       return saleDate >= startDate && saleDate <= endDate;
     }
   );
@@ -72,12 +75,17 @@ const ProfitLoss = () => {
   );
   
   // Calculate revenue
-  const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.totalPrice, 0);
+  const totalRevenue = filteredSales.reduce((sum, sale) => sum + (sale.totalPrice || sale.totalAmount), 0);
   
   // Calculate cost of goods sold
   const costOfGoodsSold = filteredSales.reduce((sum, sale) => {
-    const costPrice = sale.product.costPrice || 0;
-    return sum + (costPrice * sale.quantity);
+    if (sale.items && sale.items.length > 0) {
+      return sum + sale.items.reduce((itemSum, item) => itemSum + (item.costPrice * item.quantity), 0);
+    } else if (sale.product) {
+      const costPrice = sale.product.costPrice || 0;
+      return sum + (costPrice * (sale.quantity || 1));
+    }
+    return sum;
   }, 0);
   
   // Calculate expenses by category
@@ -238,7 +246,7 @@ const ProfitLoss = () => {
             </p>
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            Gross Profit Margin: {((grossProfit / totalRevenue) * 100).toFixed(2)}%
+            Gross Profit Margin: {totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(2) : "0.00"}%
           </p>
         </CardContent>
       </Card>
@@ -293,7 +301,7 @@ const ProfitLoss = () => {
             </p>
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            Net Profit Margin: {((netProfit / totalRevenue) * 100).toFixed(2)}%
+            Net Profit Margin: {totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : "0.00"}%
           </p>
         </CardContent>
       </Card>

@@ -353,7 +353,7 @@ const Settings = () => {
           <div className="space-y-2">
             <div className="flex justify-between">
               <p className="text-gray-500">Username</p>
-              <p className="font-medium">{currentUser?.username}</p>
+              <p className="font-medium">{currentUser?.username || currentUser?.name}</p>
             </div>
             <div className="flex justify-between">
               <p className="text-gray-500">Role</p>
