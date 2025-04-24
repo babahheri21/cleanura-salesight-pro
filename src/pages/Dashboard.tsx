@@ -6,7 +6,7 @@ import SalesChart from "../components/Dashboard/SalesChart";
 import RecentSales from "../components/Dashboard/RecentSales";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { useData } from "../context/DataContext";
-import { WhatsApp } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { Button } from "../components/ui/button";
 
 const Dashboard = () => {
@@ -62,7 +62,7 @@ const Dashboard = () => {
                           markFollowedUp(sale.id);
                         }}
                       >
-                        <WhatsApp className="w-4 h-4 mr-1" />
+                        <MessageSquare className="w-4 h-4 mr-1" />
                         WhatsApp
                       </Button>
                       <Button

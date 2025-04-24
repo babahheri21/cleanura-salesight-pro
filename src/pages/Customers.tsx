@@ -22,7 +22,7 @@ import {
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { format } from "date-fns";
-import { Users, Edit, Trash2, Plus, Search, WhatsApp } from "lucide-react";
+import { Users, Edit, Trash2, Plus, Search, MessageSquare } from "lucide-react";
 import { Customer } from "../types";
 
 const Customers = () => {
@@ -170,7 +170,7 @@ const Customers = () => {
                       className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
                       onClick={() => window.open(`https://wa.me/${customer.phone.replace(/\+/g, "")}`)}
                     >
-                      <WhatsApp className="w-4 h-4" />
+                      <MessageSquare className="w-4 h-4" />
                     </Button>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
