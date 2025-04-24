@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "../components/Layout/MainLayout";
 import { useData } from "../context/DataContext";
@@ -29,22 +28,30 @@ import {
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { format } from "date-fns";
-import { MessageSquare, Edit, Trash2, Plus, Search } from "lucide-react";
-import { Sale, Customer, Product } from "../types";
+import { MessageSquare, Edit, Trash2, Plus, Search, UserPlus } from "lucide-react";
+import { Sale, Customer } from "../types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 const Sales = () => {
-  const { sales, customers, products, addSale, updateSale, deleteSale, markFollowedUp } = useData();
+  const { sales, customers, products, addSale, updateSale, deleteSale, markFollowedUp, addCustomer } = useData();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [currentTab, setCurrentTab] = useState("existing");
   const [formData, setFormData] = useState({
     customerId: "",
     productId: "",
     quantity: 1,
     totalPrice: 0,
     notes: "",
+  });
+  const [newCustomerData, setNewCustomerData] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
   });
 
   const filteredSales = sales.filter(
@@ -67,7 +74,6 @@ const Sales = () => {
       [name]: value,
     });
 
-    // If product is selected, update total price based on product price and quantity
     if (name === "productId") {
       const product = products.find(p => p.id === value);
       if (product) {
@@ -182,9 +188,33 @@ const Sales = () => {
     }
   };
 
-  // Helper function to get sale date
   const getSaleDate = (sale: Sale) => {
     return sale.date || sale.createdAt;
+  };
+
+  const handleNewCustomerSubmit = () => {
+    if (newCustomerData.name && newCustomerData.phone) {
+      const newCustomer = addCustomer(newCustomerData);
+      setFormData(prev => ({
+        ...prev,
+        customerId: newCustomer.id
+      }));
+      setCurrentTab("existing");
+      setNewCustomerData({
+        name: "",
+        phone: "",
+        email: "",
+        address: "",
+      });
+    }
+  };
+
+  const handleNewCustomerInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewCustomerData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   return (
@@ -320,7 +350,6 @@ const Sales = () => {
         </Table>
       </div>
 
-      {/* Add Sale Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -331,24 +360,87 @@ const Sales = () => {
           </DialogHeader>
 
           <form onSubmit={handleAddSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="customerId">Customer</Label>
-              <Select
-                onValueChange={(value) => handleSelectChange("customerId", value)}
-                value={formData.customerId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Tabs value={currentTab} onValueChange={setCurrentTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="existing">Existing Customer</TabsTrigger>
+                <TabsTrigger value="new">New Customer</TabsTrigger>
+              </TabsList>
+              <TabsContent value="existing" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="customerId">Customer</Label>
+                  <Select
+                    onValueChange={(value) => handleSelectChange("customerId", value)}
+                    value={formData.customerId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.name} ({customer.phone})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="new" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-name">Customer Name</Label>
+                  <Input
+                    id="new-name"
+                    name="name"
+                    value={newCustomerData.name}
+                    onChange={handleNewCustomerInputChange}
+                    placeholder="Enter customer name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-phone">Phone Number</Label>
+                  <Input
+                    id="new-phone"
+                    name="phone"
+                    value={newCustomerData.phone}
+                    onChange={handleNewCustomerInputChange}
+                    placeholder="e.g. +628123456789"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-email">Email (Optional)</Label>
+                  <Input
+                    id="new-email"
+                    name="email"
+                    type="email"
+                    value={newCustomerData.email}
+                    onChange={handleNewCustomerInputChange}
+                    placeholder="customer@example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-address">Address (Optional)</Label>
+                  <Input
+                    id="new-address"
+                    name="address"
+                    value={newCustomerData.address}
+                    onChange={handleNewCustomerInputChange}
+                    placeholder="Customer address"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleNewCustomerSubmit}
+                  className="w-full"
+                  variant="secondary"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Save Customer
+                </Button>
+              </TabsContent>
+            </Tabs>
 
             <div className="space-y-2">
               <Label htmlFor="productId">Product</Label>
@@ -429,7 +521,6 @@ const Sales = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Sale Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -538,7 +629,6 @@ const Sales = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
