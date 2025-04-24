@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "../components/Layout/MainLayout";
 import { useData } from "../context/DataContext";
@@ -10,6 +9,8 @@ import { Switch } from "../components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Textarea } from "../components/ui/textarea";
 import { toast } from "sonner";
+import AccountSettings from "../components/Settings/AccountSettings";
+import UserManagement from "../components/Settings/UserManagement";
 
 const Settings = () => {
   const { currentUser } = useData();
@@ -96,6 +97,10 @@ const Settings = () => {
           <TabsTrigger value="business">Business Information</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="account">My Account</TabsTrigger>
+          {currentUser?.role === "admin" && (
+            <TabsTrigger value="users">User Management</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="business">
@@ -343,29 +348,17 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
 
-      <Card className="border-none shadow-sm mb-6">
-        <CardHeader>
-          <CardTitle>Account Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <p className="text-gray-500">Username</p>
-              <p className="font-medium">{currentUser?.username || currentUser?.name}</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-gray-500">Role</p>
-              <p className="font-medium capitalize">{currentUser?.role}</p>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-gray-500">Last Login</p>
-              <p className="font-medium">Today, 09:45 AM</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="account">
+          <AccountSettings currentUser={currentUser} />
+        </TabsContent>
+
+        {currentUser?.role === "admin" && (
+          <TabsContent value="users">
+            <UserManagement />
+          </TabsContent>
+        )}
+      </Tabs>
     </MainLayout>
   );
 };

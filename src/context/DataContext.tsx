@@ -21,6 +21,13 @@ interface DataContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   
+  // Users
+  users: User[];
+  addUser: (user: Omit<User, "id">) => void;
+  updateUser: (user: User) => void;
+  deleteUser: (id: string) => void;
+  changePassword: (userId: string, currentPassword: string, newPassword: string) => boolean;
+  
   // Products
   products: Product[];
   addProduct: (product: Omit<Product, "id" | "createdAt">) => void;
@@ -65,6 +72,7 @@ export const useData = () => {
 export const DataProvider = ({ children }: { children: ReactNode }) => {
   // State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>(mockUsers);
   const [products, setProducts] = useState<Product[]>(mockProducts);
   const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
   const [sales, setSales] = useState<Sale[]>(mockSales);
@@ -98,6 +106,32 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setCurrentUser(null);
     localStorage.removeItem("cleanura_user");
     toast.info("You have been logged out");
+  };
+
+  // User management functions
+  const addUser = (user: Omit<User, "id">) => {
+    const newUser = {
+      ...user,
+      id: `user-${Date.now()}`
+    };
+    setUsers([...users, newUser]);
+    toast.success("User added successfully");
+  };
+  
+  const updateUser = (user: User) => {
+    setUsers(users.map(u => u.id === user.id ? user : u));
+    toast.success("User updated successfully");
+  };
+  
+  const deleteUser = (id: string) => {
+    setUsers(users.filter(u => u.id !== id));
+    toast.success("User deleted successfully");
+  };
+  
+  const changePassword = (userId: string, currentPassword: string, newPassword: string) => {
+    // In a real app, this would verify the current password and update it
+    toast.success("Password changed successfully");
+    return true;
   };
 
   // Product functions
@@ -308,6 +342,13 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     currentUser,
     login,
     logout,
+    
+    // Users
+    users,
+    addUser,
+    updateUser,
+    deleteUser,
+    changePassword,
     
     // Products
     products,
