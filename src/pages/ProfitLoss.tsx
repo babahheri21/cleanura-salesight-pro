@@ -22,6 +22,7 @@ import {
 } from "date-fns";
 import { Download, Printer } from "lucide-react";
 import { Label } from "../components/ui/label";
+import { exportToCSV } from "../utils/csvExport";
 
 const ProfitLoss = () => {
   const { sales, expenses } = useData();
