@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "../components/Layout/MainLayout";
 import { useData } from "../context/DataContext";
@@ -46,20 +45,16 @@ const ProfitLoss = () => {
     { value: 11, label: "December" },
   ];
   
-  // Create an array of years for the dropdown (last 5 years)
   const years = Array.from({ length: 5 }, (_, i) => ({
     value: getYear(currentDate) - i,
     label: String(getYear(currentDate) - i),
   }));
   
-  // Set the start and end dates for the selected month and year
   const startDate = startOfMonth(setYear(setMonth(new Date(), selectedMonth), selectedYear));
   const endDate = endOfMonth(setYear(setMonth(new Date(), selectedMonth), selectedYear));
   
-  // Get date from sale, accounting for both date and createdAt properties
   const getSaleDate = (sale: any) => sale.date || sale.createdAt;
   
-  // Filter sales and expenses for the selected period
   const filteredSales = sales.filter(
     (sale) => {
       const saleDate = new Date(getSaleDate(sale));
@@ -74,10 +69,8 @@ const ProfitLoss = () => {
     }
   );
   
-  // Calculate revenue
   const totalRevenue = filteredSales.reduce((sum, sale) => sum + (sale.totalPrice || sale.totalAmount), 0);
   
-  // Calculate cost of goods sold
   const costOfGoodsSold = filteredSales.reduce((sum, sale) => {
     if (sale.items && sale.items.length > 0) {
       return sum + sale.items.reduce((itemSum, item) => itemSum + (item.costPrice * item.quantity), 0);
@@ -88,7 +81,6 @@ const ProfitLoss = () => {
     return sum;
   }, 0);
   
-  // Calculate expenses by category
   const expensesByCategory = filteredExpenses.reduce((acc, expense) => {
     if (!acc[expense.category]) {
       acc[expense.category] = 0;
@@ -97,19 +89,56 @@ const ProfitLoss = () => {
     return acc;
   }, {} as Record<string, number>);
   
-  // Calculate gross profit
   const grossProfit = totalRevenue - costOfGoodsSold;
   
-  // Calculate total expenses
   const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   
-  // Calculate net profit
   const netProfit = grossProfit - totalExpenses;
   
   const handlePrint = () => {
     window.print();
   };
-  
+
+  const handleExport = () => {
+    const exportData = [
+      { section: 'Revenue', item: '', amount: '' },
+      { section: '', item: 'Sales Revenue', amount: totalRevenue },
+      { section: 'Total Revenue', item: '', amount: totalRevenue },
+      { section: '', item: '', amount: '' },
+      
+      { section: 'Cost of Goods Sold', item: '', amount: '' },
+      { section: '', item: 'Product Costs', amount: costOfGoodsSold },
+      { section: 'Total COGS', item: '', amount: costOfGoodsSold },
+      { section: '', item: '', amount: '' },
+      
+      { section: 'Gross Profit', item: '', amount: grossProfit },
+      { 
+        section: 'Gross Profit Margin', 
+        item: '', 
+        amount: `${totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(2) : "0.00"}%` 
+      },
+      { section: '', item: '', amount: '' },
+      
+      { section: 'Expenses', item: '', amount: '' },
+      ...Object.entries(expensesByCategory).map(([category, amount]) => ({
+        section: '',
+        item: category,
+        amount: amount
+      })),
+      { section: 'Total Expenses', item: '', amount: totalExpenses },
+      { section: '', item: '', amount: '' },
+      
+      { section: 'Net Profit', item: '', amount: netProfit },
+      { 
+        section: 'Net Profit Margin', 
+        item: '', 
+        amount: `${totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : "0.00"}%` 
+      }
+    ];
+
+    exportToCSV(exportData, `profit-loss-${format(startDate, "yyyy-MM")}`);
+  };
+
   return (
     <MainLayout requiredRole="admin">
       <div className="flex justify-between items-center mb-6">
@@ -121,8 +150,8 @@ const ProfitLoss = () => {
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="w-4 h-4 mr-2" /> Print
           </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" /> Export
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="w-4 h-4 mr-2" /> Export CSV
           </Button>
         </div>
       </div>

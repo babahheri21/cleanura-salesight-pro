@@ -1,4 +1,3 @@
-
 import React from "react";
 import MainLayout from "../components/Layout/MainLayout";
 import { useData } from "../context/DataContext";
@@ -6,6 +5,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { format } from "date-fns";
 import { Download, Printer } from "lucide-react";
+import { exportToCSV } from "../utils/csvExport";
 
 const BalanceSheet = () => {
   const { getBalanceSheet } = useData();
@@ -13,6 +13,50 @@ const BalanceSheet = () => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExport = () => {
+    const exportData = [
+      { section: 'Assets', item: '', amount: '' },
+      ...balanceSheet.assets.map(item => ({
+        section: '',
+        item: item.name,
+        amount: item.amount
+      })),
+      {
+        section: 'Total Assets',
+        item: '',
+        amount: balanceSheet.assets.reduce((sum, asset) => sum + asset.amount, 0)
+      },
+      { section: '', item: '', amount: '' }, // Empty row for spacing
+      
+      { section: 'Liabilities', item: '', amount: '' },
+      ...balanceSheet.liabilities.map(item => ({
+        section: '',
+        item: item.name,
+        amount: item.amount
+      })),
+      {
+        section: 'Total Liabilities',
+        item: '',
+        amount: balanceSheet.liabilities.reduce((sum, liability) => sum + liability.amount, 0)
+      },
+      { section: '', item: '', amount: '' }, // Empty row for spacing
+      
+      { section: 'Equity', item: '', amount: '' },
+      ...balanceSheet.equity.map(item => ({
+        section: '',
+        item: item.name,
+        amount: item.amount
+      })),
+      {
+        section: 'Total Equity',
+        item: '',
+        amount: balanceSheet.equity.reduce((sum, equity) => sum + equity.amount, 0)
+      }
+    ];
+
+    exportToCSV(exportData, `balance-sheet-${format(new Date(balanceSheet.date), "yyyy-MM-dd")}`);
   };
 
   return (
@@ -26,8 +70,8 @@ const BalanceSheet = () => {
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="w-4 h-4 mr-2" /> Print
           </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" /> Export
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="w-4 h-4 mr-2" /> Export CSV
           </Button>
         </div>
       </div>
