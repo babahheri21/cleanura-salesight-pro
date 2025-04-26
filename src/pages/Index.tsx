@@ -1,9 +1,10 @@
+
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
-  const session = supabase.auth.getSession();
+  const { data: { session } } = supabase.auth.getSession();
   
   // If there's an active session, go to dashboard
   // Otherwise, redirect to login
