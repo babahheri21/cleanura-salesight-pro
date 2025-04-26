@@ -24,7 +24,7 @@ export const AuthForm = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
@@ -32,7 +32,10 @@ export const AuthForm = () => {
         if (error) throw error;
 
         toast.success('Logged in successfully');
-        navigate('/dashboard');
+        // Use a timeout to ensure state updates before navigation
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 100);
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
